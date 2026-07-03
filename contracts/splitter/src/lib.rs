@@ -17,6 +17,7 @@ pub enum Error {
     SplitNotFound = 5,
     SplitImmutable = 6,
     InvalidAmount = 7,
+    NothingToDistribute = 8,
 }
 
 #[contracttype]
@@ -32,6 +33,7 @@ pub struct Split {
 enum DataKey {
     Count,
     Split(u64),
+    Balance(u64, Address),
 }
 
 #[contractevent]
@@ -56,6 +58,24 @@ pub struct SplitPaid {
 pub struct SplitUpdated {
     #[topic]
     pub id: u64,
+}
+
+#[contractevent]
+#[derive(Clone)]
+pub struct Deposited {
+    #[topic]
+    pub id: u64,
+    pub token: Address,
+    pub amount: i128,
+}
+
+#[contractevent]
+#[derive(Clone)]
+pub struct Distributed {
+    #[topic]
+    pub id: u64,
+    pub token: Address,
+    pub amount: i128,
 }
 
 #[contract]
@@ -123,6 +143,58 @@ impl Splitter {
         env.storage().persistent().set(&DataKey::Split(id), &split);
         SplitUpdated { id }.publish(&env);
         Ok(())
+    }
+
+    /// Moves funds into the contract and credits them to the split without
+    /// paying anyone yet. Useful when money arrives before a distribution
+    /// should happen.
+    pub fn deposit(
+        env: Env,
+        from: Address,
+        id: u64,
+        token: Address,
+        amount: i128,
+    ) -> Result<(), Error> {
+        from.require_auth();
+        if amount <= 0 {
+            return Err(Error::InvalidAmount);
+        }
+        load(&env, id)?;
+        let vault = env.current_contract_address();
+        token::Client::new(&env, &token).transfer(&from, &vault, &amount);
+        let key = DataKey::Balance(id, token.clone());
+        let held: i128 = env.storage().persistent().get(&key).unwrap_or(0);
+        env.storage().persistent().set(&key, &(held + amount));
+        Deposited { id, token, amount }.publish(&env);
+        Ok(())
+    }
+
+    /// Pays out everything credited to the split for the given token.
+    /// Anyone can call this; the routing table decides where funds go.
+    pub fn distribute(env: Env, id: u64, token: Address) -> Result<i128, Error> {
+        let split = load(&env, id)?;
+        let key = DataKey::Balance(id, token.clone());
+        let amount: i128 = env.storage().persistent().get(&key).unwrap_or(0);
+        if amount <= 0 {
+            return Err(Error::NothingToDistribute);
+        }
+        env.storage().persistent().remove(&key);
+        payout(
+            &env,
+            &split,
+            &env.current_contract_address(),
+            &token,
+            amount,
+        );
+        Distributed { id, token, amount }.publish(&env);
+        Ok(amount)
+    }
+
+    pub fn balance(env: Env, id: u64, token: Address) -> i128 {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Balance(id, token))
+            .unwrap_or(0)
     }
 
     pub fn get_split(env: Env, id: u64) -> Result<Split, Error> {

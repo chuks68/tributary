@@ -1,4 +1,4 @@
-import { Client, networks, Recipient } from "tributary-sdk";
+import { Client, networks, Recipient, rpc, scValToNative } from "tributary-sdk";
 import {
   requestAccess,
   signTransaction,
@@ -78,6 +78,60 @@ export async function previewPayout(
 ): Promise<bigint[]> {
   const { result } = await readClient().preview_payout({ id, amount });
   return result.isErr() ? [] : [...result.unwrap()];
+}
+
+export interface ActivityItem {
+  type: string;
+  id: bigint | undefined;
+  amount: bigint | undefined;
+  ledger: number;
+  txHash: string;
+}
+
+export async function fetchActivity(limit = 12): Promise<ActivityItem[]> {
+  const server = new rpc.Server(RPC_URL);
+  const latest = await server.getLatestLedger();
+
+  async function query(lookback: number) {
+    return server.getEvents({
+      startLedger: Math.max(1, latest.sequence - lookback),
+      filters: [{ type: "contract", contractIds: [CONTRACT_ID] }],
+      limit: 100,
+    });
+  }
+
+  let res;
+  try {
+    res = await query(100_000);
+  } catch {
+    res = await query(5_000);
+  }
+
+  const items: ActivityItem[] = [];
+  for (const ev of res.events) {
+    let type: unknown;
+    let id: unknown;
+    let amount: bigint | undefined;
+    try {
+      type = scValToNative(ev.topic[0]);
+      id = ev.topic.length > 1 ? scValToNative(ev.topic[1]) : undefined;
+      const data = scValToNative(ev.value);
+      if (data && typeof data === "object" && "amount" in data) {
+        amount = data.amount as bigint;
+      }
+    } catch {
+      continue;
+    }
+    if (typeof type !== "string") continue;
+    items.push({
+      type,
+      id: typeof id === "bigint" ? id : undefined,
+      amount,
+      ledger: ev.ledger,
+      txHash: ev.txHash,
+    });
+  }
+  return items.reverse().slice(0, limit);
 }
 
 export function recipientLabel(r: Recipient): string {

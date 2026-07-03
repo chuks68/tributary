@@ -102,21 +102,7 @@ impl Splitter {
             return Err(Error::InvalidAmount);
         }
         let split = load(&env, id)?;
-        let client = token::Client::new(&env, &token);
-        let last = split.recipients.len() - 1;
-        let mut paid: i128 = 0;
-        for i in 0..split.recipients.len() {
-            let recipient = split.recipients.get_unchecked(i);
-            let part = if i == last {
-                amount - paid
-            } else {
-                amount * split.shares.get_unchecked(i) as i128 / TOTAL_SHARES as i128
-            };
-            if part > 0 {
-                client.transfer(&from, &recipient, &part);
-                paid += part;
-            }
-        }
+        payout(&env, &split, &from, &token, amount);
         SplitPaid { id, token, amount }.publish(&env);
         Ok(())
     }
@@ -166,6 +152,24 @@ fn validate(recipients: &Vec<Address>, shares: &Vec<u32>) -> Result<(), Error> {
         return Err(Error::BadShareTotal);
     }
     Ok(())
+}
+
+fn payout(env: &Env, split: &Split, from: &Address, token: &Address, amount: i128) {
+    let client = token::Client::new(env, token);
+    let last = split.recipients.len() - 1;
+    let mut paid: i128 = 0;
+    for i in 0..split.recipients.len() {
+        let recipient = split.recipients.get_unchecked(i);
+        let part = if i == last {
+            amount - paid
+        } else {
+            amount * split.shares.get_unchecked(i) as i128 / TOTAL_SHARES as i128
+        };
+        if part > 0 {
+            client.transfer(from, &recipient, &part);
+            paid += part;
+        }
+    }
 }
 
 fn load(env: &Env, id: u64) -> Result<Split, Error> {

@@ -3,9 +3,11 @@ import { recipientLabel, SplitView, EXPLORER } from "../lib/tributary";
 export default function SplitList({
   splits,
   loading,
+  mine,
 }: {
   splits: SplitView[];
   loading: boolean;
+  mine: Set<string>;
 }) {
   if (loading) return <p className="note">Loading splits…</p>;
   if (splits.length === 0) return <p className="note">No splits yet.</p>;
@@ -18,8 +20,11 @@ export default function SplitList({
           <div className="split" key={String(s.id)}>
             <div className="split-head">
               <span className="split-id">#{String(s.id)}</span>
-              <span className="badge">
-                {s.controller ? "mutable" : "locked"}
+              <span>
+                {mine.has(String(s.id)) && <span className="badge own">yours</span>}{" "}
+                <span className="badge">
+                  {s.controller ? "mutable" : "locked"}
+                </span>
               </span>
             </div>
             <ul>

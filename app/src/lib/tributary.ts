@@ -72,6 +72,11 @@ export async function fetchSplits(limit = 25): Promise<SplitView[]> {
   return splits.filter((s): s is SplitView => s !== null);
 }
 
+export async function fetchMineIds(creator: string): Promise<Set<string>> {
+  const { result } = await readClient().splits_of({ creator });
+  return new Set(result.map((id) => String(id)));
+}
+
 export async function previewPayout(
   id: bigint,
   amount: bigint,

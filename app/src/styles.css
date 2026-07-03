@@ -262,6 +262,11 @@ select.kind {
   padding: 2px 8px;
 }
 
+.badge.own {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .split ul {
   list-style: none;
   padding: 0;

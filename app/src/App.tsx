@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   connectWallet,
   fetchSplits,
+  fetchMineIds,
   shortAddress,
   SplitView,
   CONTRACT_ID,
@@ -17,6 +18,7 @@ import ManageSplit from "./components/ManageSplit";
 export default function App() {
   const [wallet, setWallet] = useState<string | null>(null);
   const [splits, setSplits] = useState<SplitView[]>([]);
+  const [mine, setMine] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,8 +40,10 @@ export default function App() {
 
   async function onConnect() {
     try {
-      setWallet(await connectWallet());
+      const address = await connectWallet();
+      setWallet(address);
       setError(null);
+      setMine(await fetchMineIds(address));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -81,7 +85,7 @@ export default function App() {
         </div>
 
         <div className="list-head">
-          <SplitList splits={splits} loading={loading} />
+          <SplitList splits={splits} loading={loading} mine={mine} />
           <button className="ghost" onClick={refresh} disabled={loading}>
             {loading ? "Refreshing…" : "Refresh"}
           </button>

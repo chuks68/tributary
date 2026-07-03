@@ -8,9 +8,11 @@ One contract instance manages every split. A split is a small record:
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `recipients` | `Vec<Address>` | who gets paid, max 32 entries |
+| `recipients` | `Vec<Recipient>` | who gets paid, max 32 entries |
 | `shares` | `Vec<u32>` | basis points per recipient, sum exactly 10,000 |
 | `controller` | `Option<Address>` | who may edit the split; `None` means locked forever |
+
+A `Recipient` is either `Account(Address)` or `Split(u64)`. Split recipients let routing compose: the child's portion is credited to its escrow balance rather than transferred onward immediately, which keeps a single payment bounded no matter how deep the tree goes. Distributing the child is a separate, permissionless call. A split cannot reference itself or a split that does not exist yet; deeper cycles built through later updates are possible but harmless, since money only ever moves between balances when someone calls `distribute`.
 
 ### Storage layout
 
@@ -44,6 +46,7 @@ Both paths round each recipient's amount down and give the leftover to the last 
 | 7 | InvalidAmount | amount is zero or negative |
 | 8 | NothingToDistribute | escrow balance is empty |
 | 9 | TooManyRecipients | more than 32 recipients |
+| 10 | BadChildSplit | split recipient is unknown or references itself |
 
 ### Events
 

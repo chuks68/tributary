@@ -1,0 +1,6 @@
+target
+node_modules
+test_snapshots
+.stellar
+app/dist
+sdk/dist

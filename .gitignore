@@ -5,3 +5,5 @@ test_snapshots/
 .stellar/
 .env
 .env.*
+
+.vercel

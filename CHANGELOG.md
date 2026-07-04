@@ -4,6 +4,7 @@
 
 ### Contract
 - Splits route to accounts or to other splits; nested portions land in the child's escrow balance
+- Batch payments settle several splits in one transaction with `pay_many`
 - Direct payments (`pay`) and escrow (`deposit`, `distribute`, `balance`)
 - `preview_payout` for exact per-recipient amounts before sending
 - Mutable splits with `update_split`, `transfer_control` and permanent locking
@@ -23,3 +24,4 @@
 
 ### Indexer
 - Standalone poller that follows contract events into an ndjson log with cursor persistence
+- CSV export for spreadsheets and accounting

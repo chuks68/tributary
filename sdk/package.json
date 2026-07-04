@@ -8,11 +8,18 @@
     "url": "https://github.com/tributary-protocol/tributary.git",
     "directory": "sdk"
   },
+  "homepage": "https://tributary-omega.vercel.app",
+  "keywords": ["stellar", "soroban", "payments", "splits"],
   "type": "module",
   "exports": "./dist/index.js",
   "typings": "dist/index.d.ts",
+  "files": ["dist", "src", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^14.5.0",

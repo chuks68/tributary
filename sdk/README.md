@@ -6,7 +6,13 @@ The client is pre-wired to the testnet deployment. Point it at another network b
 
 ## Install
 
-The package is not on npm yet. Use it from the repo:
+Install the published package from npm:
+
+```
+npm install tributary-sdk
+```
+
+Or build it from the repo checkout:
 
 ```
 cd sdk

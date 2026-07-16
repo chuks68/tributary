@@ -8,6 +8,7 @@ import {
   TOKENS,
   EXPLORER,
 } from "../lib/tributary";
+import { CopyButton } from "./CopyButton";
 
 function Detail({ split }: { split: SplitView }) {
   const [balances, setBalances] = useState<{ code: string; amount: bigint }[]>([]);
@@ -108,8 +109,11 @@ export default function SplitList({
             >
               <div className="split-head">
                 <span className="split-id">#{key}</span>
+                <CopyButton text={String(key)}>
+                  Copy
+                </CopyButton>
                 <span>
-                  {mine.has(key) && <span className="badge own">yours</span>}{" "}
+                  {mine.has(key) && <span className="badge own">yours</span>}
                   <span className="badge">
                     {s.controller ? "mutable" : "locked"}
                   </span>
@@ -127,6 +131,9 @@ export default function SplitList({
                       >
                         {recipientLabel(r)}
                       </a>
+                      <CopyButton text={r.values[0]}>
+                        Copy
+                      </CopyButton>
                     ) : (
                       <span className="nested">{recipientLabel(r)}</span>
                     )}

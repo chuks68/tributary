@@ -15,7 +15,9 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test
-      - run: cargo build --release --target wasm32v1-none -p tributary-splitter
+      - name: Check markdown links
+  run: npx -y markdown-link-check -q README.md "docs/**/*.md"
+- run: cargo build --release --target wasm32v1-none -p tributary-splitter
 
   web:
     runs-on: ubuntu-latest
